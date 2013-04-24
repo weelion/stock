@@ -1,0 +1,9 @@
+syntax: glob
+*.orig
+*.db
+*.xls
+*.psd
+syntax: regexp
+.hgignore
+config.php
+demo

@@ -2,32 +2,37 @@
     $t = get('t');
     $series = Config::get('series');
     $this_series = $series[$t];
+    $this_series_serach = $this_series['info_serach'];
+    foreach($this_series['data'] as $value){
+        $table_name[$value['alias']] = $value;
+    }
+    $this_series_serach['total']=0;
 ?>
-        <div id="edit_dialog" class="fluid" style="display: none" title="编辑库存信息">
+        <div id="edit_dialog" class="fluid" style="display: none" title="编辑出单信息">
             <form action="<?php echo home_url().module_url('doEdit'); ?>" method="POST" class="main" id="edit_form">
                 <div class="formRow">
                     <?php
                         $i = 0;
-                        foreach($this_series['data'] as  $key => $value):
-                            if($value['alias'] == 'total') :
+                        foreach($this_series_serach as  $key => $value):
+                            if($key == 'total') :
                     ?>
                     <div class="grid2 textR">
-                        <span><?php echo $value['name']; ?>：</span>  
+                        <span><?php echo $table_name[$key]['name']; ?>：</span>  
                     </div>
                     <div class="grid2">
                         <div class="ui-spinner">
                             <button class="ui-spinner-add ui-type" type="button" v="1"></button>
                             <button class="ui-spinner-subtract ui-type" type="button" v="2"></button>
                             <input type="hidden" name="operator" value="0"/>
-                            <input type="text" name="<?php echo $value['alias']; ?>" value="" class="ui-spinner-box" autocomplete="off">
+                            <input type="text" name="<?php echo $key; ?>" value="" class="ui-spinner-box" autocomplete="off" data="<?php echo $key; ?>">
                         </div>
                     </div>  
                     <?php else: ?>
                     <div class="grid2 textR">
-                        <span><?php echo $value['name']; ?>：</span>  
+                        <span><?php echo $table_name[$key]['name']; ?>：</span>  
                     </div>
                     <div class="grid2">
-                        <input name="<?php echo $value['alias']; ?>" class="text" type="text" value="">
+                        <input name="<?php echo $key; ?>" class="text" type="text" value="" data="<?php echo $key; ?>">
                     </div>  
                     <?php endif; ?>
                     <?php
@@ -38,7 +43,6 @@
                             echo '<div class="clear"></div></div><div class="formRow">';
                     ?>
                     <div class="grid2" style="float:right;text-align: right;">
-                        <input name="id" type="hidden" value="" />
                         <a href="javascript:;" class="buttonS bBlue" id="edit_save"><span style="color: #fff">保存</span></a>
                     </div>
                     <div class="clear"></div>

@@ -149,17 +149,30 @@ function ajax_error($data) {
 	exit;
 }
 
+/**
+ * 获取所有权限
+ */
+function all_auths() {
+    $auths = Config::get('auths');
+    $data = array();
+    foreach ($auths as $key => $value) {
+        $data = array_merge($data, $value);
+    }
+
+    return array_keys($data);
+}
 
 /**
  * 写日志
  */
-function logs($type, $data, $extra) {
+function logs($type, $data, $extra, $colour='') {
     $data = array(
         'type'     => $type,
         'uid'      => isset($_SESSION['s_uid']) ? $_SESSION['s_uid'] : 0,
         'data'     => $data,
         'extra'    => $extra,
-        'loged_at' => NOW
+        'loged_at' => NOW,
+        'colour'   => $colour
         );
 
     return Logs_Model::create($data);
@@ -199,67 +212,103 @@ function createZIP($data) {
     return $name;
 }
 
+
 /**
  * 发送
  */
 function sendBackup($dateiname) {
+    $m = new MAIL5;
     $emails = Config::get('email');
-
+    $from = Config::get('serveremail');
+    $c=$m->connect($from['smtp'],$from['port'], $from['user'], $from['pass']);
+    $m->from($from['user'], $from['name']);
+    $m->subject(date("Y_m_d").'数据库备份');
+    $m->text(date("Y_m_d").'数据库备份');
+    $m->attach(file_get_contents($dateiname), FUNC5::mime_type($dateiname), 'data_' . date("Y_m_d").'.zip', null, null, 'inline', MIME5::unique());
     // 读取邮箱地址
     foreach($emails as $email)
     {
-        $to = $email;
-
-        $from = Config::get('serveremail');;
-
-        $message_body = "本邮件中包含的zip压缩包为数据库备份";
-
-        $msep = strtoupper (md5 (uniqid (time ())));
-
-        // 设置email头
-        $header =
-        "From: $from\r\n" .
-        "MIME-Version: 1.0\r\n" .
-        "Content-Type: multipart/mixed; boundary=".$msep."\r\n\r\n" .
-        "--$msep\r\n" .
-        "Content-Type: text/plain\r\n" .
-        "Content-Transfer-Encoding: 8bit\r\n\r\n" .
-        $message_body . "\r\n";
-
-
-        // 压缩包大小
-        $dateigroesse = filesize ($dateiname);
-
-        // 读取压缩包
-        $f = fopen ($dateiname, "r");
-        // 保存到附件
-        $attached_file = fread ($f, $dateigroesse);
-        // 关闭压缩包
-        fclose ($f);
-        // 建立一个附件
-        $attachment = chunk_split (base64_encode ($attached_file));
-
-        // 设置附件头
-        $header .=
-        "--" . $msep . "\r\n" .
-        "Content-Type: application/zip; name='Backup'\r\n" .
-        "Content-Transfer-Encoding: base64\r\n" .
-        "Content-Disposition: attachment; filename='Backup.zip'\r\n" .
-        "Content-Description: Mysql Datenbank Backup im Anhang\r\n\r\n" .
-        $attachment . "\r\n";
-
-        // 标记附件结束未知
-        $header .= "--$msep--";
-
-        // 邮件标题
-        $subject = "数据库备份";
-
-        // 发送邮件需要开启php相应支持哦^^
-        if(mail($to, $subject, '', $header) == FALSE)
-        {
-            die("无法发送邮件，请检查邮箱地址");
-        }
-
-        echo "<p><small>邮件发送成功</small></p>";
+        $m->addto($email['address'], $email['name']);
     }
+
+    $flat = false;
+    if($m->send($c)){
+        $flat = true;
+    }
+
+    return $flat;
+}
+function StopAttack($StrFiltKey,$StrFiltValue,$ArrFiltReq){  
+
+	$StrFiltValue=arr_foreach($StrFiltValue);
+	if (preg_match("/".$ArrFiltReq."/is",$StrFiltValue)==1){   
+			//slog("<br><br>操作IP: ".$_SERVER["REMOTE_ADDR"]."<br>操作时间: ".strftime("%Y-%m-%d %H:%M:%S")."<br>操作页面:".$_SERVER["PHP_SELF"]."<br>提交方式: ".$_SERVER["REQUEST_METHOD"]."<br>提交参数: ".$StrFiltKey."<br>提交数据: ".$StrFiltValue);
+            error('错误', '您的提交带有不合法参数,谢谢合作!');
+	}
+	if (preg_match("/".$ArrFiltReq."/is",$StrFiltKey)==1){   
+			//slog("<br><br>操作IP: ".$_SERVER["REMOTE_ADDR"]."<br>操作时间: ".strftime("%Y-%m-%d %H:%M:%S")."<br>操作页面:".$_SERVER["PHP_SELF"]."<br>提交方式: ".$_SERVER["REQUEST_METHOD"]."<br>提交参数: ".$StrFiltKey."<br>提交数据: ".$StrFiltValue);
+			error('错误', '您的提交带有不合法参数,谢谢合作!');
+	}  
+}
+function arr_foreach($arr) {
+	static $str;
+	if (!is_array($arr)) {
+	return $arr;
+	}
+	foreach ($arr as $key => $val ) {
+
+	if (is_array($val)) {
+
+		arr_foreach($val);
+	} else {
+
+	  $str[] = $val;
+	}
+	}
+	return implode($str);
+}
+
+
+//导出excel格式表
+function exportData($filename,$title,$data){
+    $cache = PHPExcel_CachedObjectStorageFactory::cache_to_discISAM;
+    PHPExcel_Settings::setCacheStorageMethod($cache);
+    $objExcel = new PHPExcel();
+    $objExcel->setActiveSheetIndex(0); 
+    $objActSheet = $objExcel->getActiveSheet();
+    $objActSheet->setTitle($filename);
+    $objActSheet->setCellValue('A1', '晶台光电库存系统'.$filename);
+    $title_array = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+    //合并单元格
+    $objActSheet->mergeCells('A1:'.$title_array[count($title)-1].'1');    
+    //设置样式   
+    $objStyleA1 = $objActSheet->getStyle('A1');       
+    $objStyleA1->getAlignment()->setHorizontal(PHPExcel_Style_Alignment::HORIZONTAL_CENTER);   
+    $objFontA1 = $objStyleA1->getFont();       
+    $objFontA1->setName('宋体');       
+    $objFontA1->setSize(18);     
+    $objFontA1->setBold(true);
+    // 设置表头
+    foreach($title as $k=>$v){
+        $objActSheet->setCellValue($title_array[$k].'2', $v);
+    }
+    foreach($data as $key=>$value){
+        $k=$key+3;
+        foreach($value as $a=>$b){
+            $objActSheet->setCellValueExplicit($title_array[$a].$k, $b,PHPExcel_Cell_DataType::TYPE_STRING); 
+        }
+    }
+    $ua = $_SERVER['HTTP_USER_AGENT'];
+    if(preg_match('/MSIE/',$ua)) {  
+        $outputFileName = str_replace('+','%20',urlencode('晶台光电库存系统'.$filename));
+    }else{
+        $outputFileName = '晶台光电库存系统'.$filename;
+    }
+    header('Content-Type: application/vnd.ms-excel');
+    header('Content-Disposition: attachment;filename="'.$outputFileName.'.xls"');
+    header('Cache-Control: max-age=0');
+    $objWriter = PHPExcel_IOFactory::createWriter($objExcel, 'Excel5');
+    $objWriter->setPreCalculateFormulas(false);
+    $objWriter->save('php://output');
+    exit;
 }

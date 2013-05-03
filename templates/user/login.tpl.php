@@ -39,7 +39,7 @@
                             $.jGrowl('帐号或密码不正确');
                         } else if( data == '1') {
                             $.jGrowl('登录成功');
-                            self.location='/';
+                            self.location='<?php echo home_url(); ?>';
                         } else {
                             $.jGrowl('未知错误');
                         }

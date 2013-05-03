@@ -34,6 +34,8 @@ a {
 
 .clear {clear: both;}
 
+
+
 #top {
 	background: url(../images/backgrounds/top.jpg) repeat-x 0 0;
 	height: 48px;
@@ -461,9 +463,19 @@ ul.breadcrumbs li.current > a {
 .fluid .grid1 {
 	width: 6.382978723%;
 }
+.fluid .grid0_8 {
+	width: 6%;
+}
+.fluid .grid0_2 {
+	width: 2%;
+}
+.fluid .grid1_8 {
+    width: 14%;
+}
 .fluid .grid2 {
 	width: 14.89361702%;
 }
+
 .fluid .grid3 {
     width: 23.4043%;
 }
@@ -643,6 +655,7 @@ table.dataTable tr {
 }
 table.dataTable td {
 	padding: 7px 11px;
+	text-align: center;
 }
 
 .thisRow {
@@ -1057,7 +1070,7 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bb934f', end
 	top: 50%;
 }
 .errorWrapper .errorNum {
-	color: white;
+	color: #CD9997;
 	display: block;
 	font-size: 100px;
 	padding: 110px 0 80px 0;
@@ -1083,11 +1096,60 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bb934f', end
 }
 
 
+.fluid .grid12 {
+    width: 100%;
+}
+.fluid .grid11 {
+    width: 91.4894%;
+}
+.fluid .grid10 {
+    width: 82.9787%;
+}
+.fluid .grid9 {
+    width: 74.4681%;
+}
+.fluid .grid8 {
+    width: 65.9574%;
+}
+.fluid .grid7 {
+    width: 57.4468%;
+}
 .fluid .grid6 {
-	width: 48.93617020799999%;
+    width: 48.9362%;
+}
+.fluid .grid5 {
+    width: 40.4255%;
+}
+.fluid .grid4 {
+    width: 31.9149%;
+}
+.fluid .grid3 {
+    width: 23.4043%;
+}
+.formSubmit {
+    display: block;
+    float: right;
 }
 /**********     error page ends       *****************/
 
+ 
+/********************* 列表操作 begins********************************/
+.tableActs {
+	text-align: center;
+}
+.tableActs > a {
+	margin: 0 2px;
+}
+.tablectrl_small {
+	font-size: 10px;
+	padding: 5px 5px 4px 5px;
+}
+
+[class*="tablectrl"] {
+	text-shadow: none;
+}
+
+/***********************列表操作 ends ***************************/
 
 .widget {
     background: none repeat scroll 0 0 #F7F7F7;
@@ -1193,3 +1255,11 @@ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#bb934f', end
 }
 
 /****************** 提示样式 ends   *******************/
+.dTable tr.highlight { background:#b6c6d7;}  
+.dTable tr.selected  { background:#b6c6d7;}
+.req {
+color: #DB6464;
+display: block;
+float: right;
+margin-left: 5px;
+}

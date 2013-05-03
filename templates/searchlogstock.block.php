@@ -11,9 +11,9 @@
             </div>  
             <div class="grid3">
                 <ul class="datesRange">
-                    <li><input id="fromDate" class="timepicker" type="text" value="<?php echo get('min'); ?>" title="开始时间" placeholder="From" name="min" readonly="readonly"></li>
+                    <li><input id="fromDate" class="timepicker" type="text" value="<?php echo get('min'); ?>" title="开始时间" placeholder="开始时间" name="min" readonly="readonly"></li>
                     <li class="sep">~</li>
-                    <li><input id="toDate" class="timepicker" type="text" value="<?php echo get('max'); ?>" title="结束时间" placeholder="To" name="max" readonly="readonly"></li>
+                    <li><input id="toDate" class="timepicker" type="text" value="<?php echo get('max'); ?>" title="结束时间" placeholder="结束时间" name="max" readonly="readonly"></li>
                 </ul>
             </div> 
             <div class="grid1">
@@ -25,7 +25,7 @@
         <script>
         $(function() {
 			var dates = $( "#fromDate, #toDate" ).datepicker({
-				defaultDate: "+1w",
+				defaultDate: "+0",
 				changeMonth: false,
 				showOtherMonths:true,
 				numberOfMonths: 1,

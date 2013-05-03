@@ -14,7 +14,7 @@
                         <span><?php echo $value['name']; ?>：</span>  
                     </div>
                     <div class="grid2">
-                        <input name="<?php echo $value['alias']; ?>" class="text" type="text" value="">
+                        <input name="<?php echo $value['alias']; ?>" class="text" type="text" value="<?php echo $value['default'];?>">
                     </div>  
                     <?php
                         $k++;

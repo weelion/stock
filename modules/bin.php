@@ -45,7 +45,7 @@ class Bin extends base
      * Bin 导入引导页面
      *
      */
-    public function action_center() {
+    public function action_index() {
         Render::with('bin_center')->show();
     }
 
@@ -96,6 +96,7 @@ class Bin extends base
                         $return = BinBG_Model::doImport($data);
                         break;
                 }
+                unlink($dir);
                 ajax_error($return);
             } else {
                 $upload_errors = array( 

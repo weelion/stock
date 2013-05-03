@@ -4,7 +4,7 @@
     $this_series = $series[$t];
 ?>
         <div id="edit_dialog" class="fluid" style="display: none" title="编辑库存信息">
-            <form action="<?php echo home_url().module_url('doEdit'); ?>" method="POST" class="main" id="edit_form">
+            <form action="<?php echo home_url().module_url('doEdit2'); ?>" method="POST" class="main" id="edit_form">
                 <div class="formRow">
                     <?php
                         $i = 0;
@@ -27,7 +27,7 @@
                         <span><?php echo $value['name']; ?>：</span>  
                     </div>
                     <div class="grid2">
-                        <input name="<?php echo $value['alias']; ?>" class="text" type="text" value="">
+                        <input name="<?php echo $value['alias']; ?>" class="text" type="text" value="" <?php if($value['alias'] != 'total'): ?>readonly="readonly"<?php endif; ?>>
                     </div>  
                     <?php endif; ?>
                     <?php

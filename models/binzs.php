@@ -17,8 +17,8 @@ class BinZS_Model
         $title = array(
                 'bin'=>'BIN号', 'pno'=>'生产批号',
                   'current'=>'分光电流',
-                  'wavelength'=>'波长（nm)','bright'=>'亮度（mcd)',
-                  'voltage'=>'电压(V)');
+                  'tone'=>'波长(nm)','bright'=>'亮度(mcd)',
+                  'voltage'=>'电压(v)','ccode'=>'颜色(nm)');
 
 
         $import_hearder = array_shift($data);
@@ -34,10 +34,10 @@ class BinZS_Model
             if(empty($bin_zs)){
                 $data[$key]='(\''.$bin.'\',\''.$value['1'].'\',\''
                                .$current.'\',\''.$value['3'].'\',\''
-                               .$value['4'].'\',\''.$value['5'].'\',\''.NOW.'\')';
+                               .$value['4'].'\',\''.$value['5'].'\',\''.$value['6'].'\',\''.NOW.'\')';
             }else{
                 $sql = 'update `bin_zs` set 
-                        `current`=\''.$current.'\',`wavelength`=\''.$value['3'].'\',`bright`=\''.$value['4'].'\',`voltage`=\''.$value['5'].'\' 
+                        `current`=\''.$current.'\',`tone`=\''.$value['3'].'\',`bright`=\''.$value['4'].'\',`voltage`=\''.$value['5'].'\',`ccode`=\''.$value['6'].'\'  
                          where id='.$bin_zs['id'];
                 DB::query($sql);
                 unset($data[$key]);
@@ -59,7 +59,7 @@ class BinZS_Model
     public static function load($pno, $bid) {
         if(empty($pno) || empty($bid)) return array();
 
-        $sql = "select `current`, `wavelength`, `bright`, `voltage` from `bin_zs` where `bin` = '{$bid}' and `pno` like '" . $pno ."%'";
+        $sql = "select `current`, `tone`, `bright`, `voltage`,`ccode` from `bin_zs` where `bin` = '{$bid}' and `pno` like '" . $pno ."%'";
 
         return DB::all($sql);
     }

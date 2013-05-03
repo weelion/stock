@@ -8,7 +8,16 @@ class Bdata_Model {
     public static function total($filter) {
 
         $sql = "select count(id) as count from `bdata`";
-
+        if($filter) {
+            $sql .= ' where 1=1 ';
+            foreach($filter as $field => $value) {
+                if(in_array($field,array('code','model'))) {
+                    $sql .= " and `{$field}` like '{$value}%'";
+                }else{
+                    $sql .= " and `{$field}` = '{$value}'";
+                }
+            }
+        }
         return DB::only($sql);
     }
 
@@ -76,7 +85,11 @@ class Bdata_Model {
         if($filter) {
             $sql .= ' where 1=1 ';
             foreach($filter as $field => $value) {
-                $sql .= " and `{$field}` = '{$value}'";
+                if(in_array($field,array('code','model'))) {
+                    $sql .= " and `{$field}` like '{$value}%'";
+                }else{
+                    $sql .= " and `{$field}` = '{$value}'";
+                }
             }
         }
 

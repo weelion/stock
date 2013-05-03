@@ -1,14 +1,17 @@
 <?php block('header');?>
 <?php block('sidebar'); ?>
+<?php 
+    $t = get('t');
+    $series = Config::get('series');
+    $this_series = $series[$t];
+    $del_display = '';
+    if(!User_Model::has_auth('bdata_dodel_' .$t)) {
+        $del_display = 'display:none';
+    }
+?>
 <div id="content">
     <div class="contentTop">
-        <?php 
-            $t = get('t');
-            $series = Config::get('series');
-            $this_series = $series[$t];
-        ?>
         <span class="pageTitle"><span class="icon-user-2"></span><?php echo $this_series['title']; ?>基础数据</span>
-        
         <div class="clear"></div>
     </div>
 
@@ -29,22 +32,42 @@
     <!-- Breadcrumbs line ends -->
 
     <div class="wrapper">
-
+        <div class="widget fluid">
+          <div class="formRow">
+            <div class="grid1 textR">
+              <span>物料代码：</span>  
+            </div>  
+            <div class="grid2">
+              <input id="code" class="search text" type="text" value="<?php echo get('code');?>" name="code">
+            </div> 
+           <div class="grid1 textR">
+              <span>产品型号：</span>  
+            </div>  
+            <div class="grid2">
+              <input id="model" class="search text" type="text" value="<?php echo get('model');?>" name="model">
+            </div>
+            <div class="grid1">
+              <a href="javascript:;" class="buttonS bBlue" id="search"><span>搜索</span></a>
+            </div>
+            <div class="clear"></div>
+          </div>
+        </div>
         <?php tips(); ?>
-
         <div class="widget fluid">
             <div class="whead"><h6><?php echo $this_series['title']; ?>数据</h6><div class="clear"></div></div>
             <div class="hiddenpars">
+                <?php if(User_Model::has_auth('bdata_doadd_' .$t)): ?>
                 <div class="cOptions">
                     <a href="javascript:;" class="tOptions" id="add">
                         <span class="icon-plus-2" style="margin:0; padding:0; color: #666"></span>
                     </a>
                 </div>
+                <?php endif;?>
                 <div id="bdata_list_table_wrapper" class="dataTables_wrapper" role="grid">
                     <table cellpadding="0" cellspacing="0" border="0" class="dTable checkAll dataTable" style="width: 100%;">
                         <thead>
                             <tr role="row">
-                                <th><input class="checkAll check checkbox_id" type="checkbox" key="bdata_list_table_wrapper"></th>
+                                <th style="<?php echo $del_display; ?>"><input class="checkAll check checkbox_id" type="checkbox" key="bdata_list_table_wrapper"></th>
                                 <th class="sorting_disabled" tabindex="0" rowspan="1" colspan="1" width="31%">物料代码</th>
                                 <th class="sorting_disabled" tabindex="0" rowspan="1" colspan="1" width="31%">产品型号</th>
                                 <th class="sorting_disabled" tabindex="0" rowspan="1" colspan="1">产品规格</th>
@@ -52,15 +75,12 @@
                         </thead>
                         <tbody role="alert" aria-live="polite" aria-relevant="all">
                             <?php
-                                $i = 0;
                                 foreach ($tdata['list'] as $key => $value) :
-                                    $i++;
-
                             ?>
-                            <tr class="<?php echo ($i%2 == 0) ? 'even' : 'odd'; ?>"  sid="<?php echo $value['id']; ?>">
+                            <tr sid="<?php echo $value['id']; ?>">
                                 <?php 
                                     $id = $value['id'];
-                                    echo '<td><input type="checkbox" class="check" value="'.$id.'" name="ids[]"></td>';
+                                    echo '<td style="' . $del_display .'"><input type="checkbox" class="check" value="'.$id.'" name="ids[]"></td>';
                                     unset($value['id']);
                                 ?>
                                 <td><?php echo $value['code']; ?></td>
@@ -73,8 +93,10 @@
                     </tbody>
                 </table>
                 <div class="fg-toolbar tableFooter">
+                    <span style="<?php echo $del_display; ?>">
                     <input class="checkAll check" key="bdata_list_table_wrapper" type="checkbox">
-                    <a href="javascript:;" class="buttonH bRed" id="delete">删除</a>
+                    </span>
+                    <a style="<?php echo $del_display; ?>" href="javascript:;" class="buttonH bRed" id="delete">删除</a>
                     <?php $tdata['pagination']->render();?>
                 </div>
             </div>
@@ -173,6 +195,7 @@
         });
 
         // 编辑库存
+        <?php if(User_Model::has_auth('bdata_doedit_' .$t)): ?>
         var edit_dialog = $('#edit_dialog');
         edit_dialog.dialog({
             autoOpen: false,
@@ -208,7 +231,7 @@
                 $('#edit_form').submit();
             }
         });
-
+        <?php endif; ?>
 
         // 删除确认
         var del_dialog = $('#del_dialog');
@@ -255,6 +278,18 @@
             $('#del_dialog').attr('del-data', ids);
             del_dialog.dialog('open');
         });
+        $('#search').click(function(){
+                var code=$('#code').val();
+                var model = $('#model').val();
+                var url = '<?php echo home_url(); ?>?m=bdata&a=list&t=<?php echo $t; ?>';
+                if(code){
+                    url+='&code='+code;
+                }
+                if(model){
+                    url+='&model='+model;
+                }
+                window.location.href=url;
+            });
     });
 
     function check_form(inputs) {

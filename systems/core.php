@@ -12,6 +12,9 @@ date_default_timezone_set('PRC');
 define('EXT', '.php');
 define('NOW', time());
 define('PAGESIZE', 10);
+define('LIKE', 1);
+define('LEFT_LIKE', 2);
+define('RIGHT_LIKE', 3);
 
 require path('sys').'config'.EXT;
 require path('sys').'helpers'.EXT;

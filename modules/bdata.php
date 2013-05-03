@@ -43,7 +43,12 @@ class Bdata extends base
 
         $pagesize = PAGESIZE;
         $filter = array('series' => $t);
-        
+        if(get('code')){
+            $filter['code'] = get('code');
+        }
+        if(get('model')){
+            $filter['model'] = get('model');
+        }
         $total = Bdata_Model::total($filter);
         $pagination = new Pagination();
         $pagination->records($total);
@@ -66,6 +71,10 @@ class Bdata extends base
 
         $rs = Bdata_Model::info($t, $id, $code);
 
+        if(count($rs) == 1){
+            $rs = $rs[0];
+        }
+
         Render::json($rs);
     }
 
@@ -83,14 +92,17 @@ class Bdata extends base
 
         // 验证
         $error = $this->_check_bdata_data($data);
-
+        $extra = '失败';
         if(empty($error)) {
-            if(Bdata_Model::create($data)) 
+            if(Bdata_Model::create($data)) {
                 $_SESSION['tips_success'] = '添加基础数据成功。';
-            else $_SESSION['tips_error'] = '添加失败。';
+                $extra = '成功';
+            } else $_SESSION['tips_error'] = '添加失败。';
         } else {
             $_SESSION['tips_error'] = $error;
         }
+
+        logs('bdata', '添加基础数据', $extra);
    
         header('Location:' . home_url() . '?m=bdata&a=list&t=' . $t);
     }
@@ -109,13 +121,17 @@ class Bdata extends base
         // 验证
         $error = $this->_check_bdata_data($data);
 
+        $extra = '失败';
         if(empty($error)) {
-            if(Bdata_Model::update($id, $data)) 
+            if(Bdata_Model::update($id, $data)) {
                 $_SESSION['tips_success'] = '编辑基础数据成功。';
-            else $_SESSION['tips_error'] = '编辑失败。';
+                $extra = '成功';
+            }else $_SESSION['tips_error'] = '编辑失败。';
         } else {
             $_SESSION['tips_error'] = $error;
         }
+
+        logs('bdata', "编辑基础数据ID：{$id}", $extra);
    
         header('Location:' . home_url() . '?m=bdata&a=list&t=' . $t);
     }
@@ -125,12 +141,16 @@ class Bdata extends base
      */
     public function action_doDel() {
         $ids = get('ids');
+        $extra = '失败';
         if(Bdata_Model::delete($ids)) {
             $_SESSION['tips_success'] = '删除成功。';
+            $extra = '成功';
             echo 1;
         } else {
             error('错误', '删除失败。');
         }
+
+        logs('bdata', "删除基础数据ID：" . implode(', ', $ids), $extra);
     }
 
     /**

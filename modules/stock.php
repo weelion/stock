@@ -54,29 +54,23 @@ class Stock extends base
             $table_width += intval($s['width']);
         }
 
-        // 筛选
-        $filter = array();
-        foreach ($fields as $key => $value) {
-            if(get($value)){
-                $filter[$value]= trim(get($value));
-            }
-        }
 
         $pagesize = get('pagesize') ? get('pagesize') : PAGESIZE; 
 
-        $total = Stock_Model::total($filter);
+        $total = Stock_Model::total($this_series);
 
         $pagination = new Pagination();
         $page = $pagination->get_page();
         $pagination->records($total);
         $pagination->records_per_page($pagesize);
-        $list = Stock_Model::filter($fields, $filter, $page, $pagesize);
+        $list = Stock_Model::filter($fields, $this_series, $page, $pagesize);
 
         $data['pagination'] = $pagination;
         $data['list'] = $list;
         $data['width'] = $table_width;
         $data['range'] = json_encode($this_series['range']);
-
+        // 当前库存
+        $data['total'] = $total = Stock_Model::sum_total($this_series);
 
         Render::with('stock_list', $data)->show();
     }
@@ -95,7 +89,7 @@ class Stock extends base
         $operator           = intval($request['operator']) ? intval($request['operator']) : 0;
         $data               = $request;
         $data['updated_at'] = NOW;
-
+        $colour = '';
         // 删除不必要数据
         unset($data['m'], $data['a'], $data['t'], $data['id'], $data['operator']);
 
@@ -121,6 +115,9 @@ class Stock extends base
             $log_data = '编辑库存%s失败';
         } else {
             $log_data = '编辑库存%s成功';
+            if($operator !=1 && !empty($operator)){
+                $colour = 'red';
+            }
         }
 
         if(!empty($operator)) {
@@ -134,9 +131,16 @@ class Stock extends base
         }
 
 
-        logs('stock', $log_data . '，批号：', $data['pno']);
+        logs('stock', $log_data . '，批号：', $data['pno'], $colour);
 
         header('Location:' . home_url() . '?m=stock&a=list&t=' . $t);
+    }
+
+    /**
+     * 部分编辑
+     */
+    public function action_doEdit2() {
+        $this->action_doEdit();
     }
 
     /**
@@ -151,19 +155,58 @@ class Stock extends base
         $data['updated_at'] = NOW;
         $data['created_at'] = NOW;
 
+
         // 删除不必要数据
         unset($data['m'], $data['a'], $data['t'], $data['operator']);
 
         // 验证
         $error = $this->_check_stock_data($data, $this_series);
 
+        $where = $upodata = array();
+
         if(empty($error)) {
-            if(Stock_Model::create($data)) 
-                $_SESSION['tips_success'] = '添加库存成功。';
-            else $_SESSION['tips_error'] = '添加失败。';
+            foreach($data as $key=>$value){
+                if(!in_array($key, array('id','total','created_at','updated_at'))){
+                    $where [] = '`'.$key.'` = \''.$value.'\'';
+                    $upodata [$key] =  $value;
+                }
+            }
+            $sql = 'select id from '.Stock_Model::table().' where '.implode(' and ', $where);
+            $id = DB::only($sql);
+            if(empty($id)){
+                $operator = 0;
+                if(Stock_Model::create($data)){
+                    $_SESSION['tips_success'] = '添加库存成功。';
+                }else{
+                    $_SESSION['tips_error'] = '添加失败。';
+                }
+            }else{
+                $operator = 1;
+                if(Stock_Model::update($id,$upodata,1,$data['total'])){
+                    $_SESSION['tips_success'] = '添加库存成功。';
+                }else{
+                    $_SESSION['tips_error'] = '添加失败。';
+                }
+            }
         } else {
             $_SESSION['tips_error'] = $error;
         }
+
+        if(isset($_SESSION['tips_error'])) {
+            if($operator==1){
+                $log_data = sprintf('编辑库存%失败', '数目+'. $data['total']);
+            }else{
+                $log_data = '添加库存失败';
+            }
+        } else {
+            if($operator==1){
+                $log_data = sprintf('编辑库存%成功', '数目+'. $data['total']);
+            }else{
+                $log_data = '添加库存成功';
+            }
+        }
+
+        logs('stock', $log_data.'，批号：', $data['pno']);
 
         header('Location:' . home_url() . '?m=stock&a=list&t=' . $t);
     }
@@ -173,12 +216,16 @@ class Stock extends base
      */
     public function action_doDel() {
         $ids = get('ids');
+        $extra = '失败';
         if(Stock_Model::delete($ids)) {
             $_SESSION['tips_success'] = '删除成功。';
+            $extra = '成功';
             echo 1;
         } else {
             error('错误', '删除失败。');
         }
+
+        logs('stock', "删除库存数据ID：" . implode(', ', $ids), $extra);
     }
 
     /**
@@ -196,10 +243,10 @@ class Stock extends base
         foreach($info as $key => $value) {
             $k = trim(trim($key, 'min_'), 'max_');
             if(in_array($k, $this_series['range']) && !isset($info[$k])) {
-                if(($info['min_'.$k] != 0) && ($info['max_'.$k] != 0))
+                if(($info['min_'.$k] != '0') && ($info['max_'.$k] != '0'))
                     $info[$k] = $info['min_'.$k] . '-' . $info['max_' . $k];
             } else {
-                if($value == 0)
+                if($value == '0')
                     unset($info[$key]);
             }
         }
@@ -254,6 +301,61 @@ class Stock extends base
         }
 
         return $error;
+    }
+
+
+    /**
+     * 数据导出
+     */
+    public function action_export() {
+        $t = get('t');
+        $series = Config::get('series');
+        $this_series = $series[$t];
+
+        // 获取字段(排序)
+        $fields = array('id');
+        $table_width = 0;
+        $title = array();
+        foreach($this_series['data'] as $s) {
+            $title[] = $s['name'];
+            if(in_array($s['alias'], $this_series['range'])) {
+                $fields[] = 'min_' . $s['alias'];
+                $fields[] = 'max_' . $s['alias'];
+            } else {
+                $fields[] = $s['alias'];
+            }
+
+            $table_width += intval($s['width']);
+        }
+
+        $total = Stock_Model::total($this_series);
+        $list = Stock_Model::filter($fields, $this_series, 1, $total);
+        foreach ($list as $key => $value) {
+            if(isset($value['id']) && !empty($value['id'])) {
+                unset($value['id']);
+            }
+
+            $set = array();
+            foreach($value as $k => $v) {
+                $k = trim(trim($k, 'min_'), 'max_');
+                if(in_array($k, $this_series['range']) && !in_array($k, $set)) {
+                    $v = '';
+                    $set[] = $k;
+                    if($value['min_'.$k] != '0' && $value['max_'.$k] != '0') {
+                                                
+                        $v = $value['min_'.$k] . '-' . $value['max_'.$k];
+                    }
+                    $data[$key][] = $v;
+                } else if(!in_array($k, $this_series['range'])) {
+                    if($v == '0') {
+                        $v = '';
+                    }
+                    $data[$key][] = $v;
+                }
+            }
+        }
+        $filename = $this_series['title'].'系列'.date('Ymd');
+        exportData($filename,$title,$data);
     }
 
 

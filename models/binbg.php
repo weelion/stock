@@ -18,8 +18,8 @@ class BinBG_Model
         $title = array(
                 'bin'=>'BIN号', 'pno'=>'生产批号',
                   'current'=>'分光电流','index'=>'显指',
-                  'ctemp'=>'色温(K)','bright'=>'流明（LM）',
-                  'voltage'=>'电压(V)','ccode'=>'色区代码');
+                  'ctemp'=>'色温(k)','bright'=>'流明(lm)',
+                  'voltage'=>'电压(v)','ccode'=>'色区代码');
 
 
         $import_hearder = array_shift($data);

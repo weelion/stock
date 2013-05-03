@@ -18,21 +18,26 @@ class Config
      */
     public static function init() {
 
-        $series = include path('sys').'series.php';
+        $series = include path('sys') . 'series.php';
+        $auth   = include path('sys') . 'auth.php';
+        $email  = include path('sys') . 'email.php';
 
         self::$_config = array(
-                'app_title'   => '晶台光电库存系统 demo v1.0',
+                'app_title'   => '晶台光电库存系统',
                 'home_url'    => '/',
                 'series'      => $series,
+                'auths'       => $auth,
                 'admin'       => array(1),   // 管理员
-                'store_clerk' => array(2,3), // 仓管
-                'salesman'    => array(4),   // 业务
+                'store_clerk' => array(2), // 仓管
+                'salesman'    => array(3),   // 业务
                 'mysql'       => array(
-                'host'        => 'localhost',
-                'database'    => 'kc',
-                'username'    => 'root',
-                'password'    => '',
+                    'host'        => 'localhost',
+                    'database'    => 'kc',
+                    'username'    => 'root',
+                    'password'    => '',
                 ),
+                'serveremail' => $email['serveremail'],
+                'email'       => $email['email'],
         );
     }
 

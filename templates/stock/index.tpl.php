@@ -29,10 +29,18 @@
     	
         <!-- Buttons with font icons -->
         <ul class="middleNavA">
+            <?php if(User_Model::has_auth('stock_list_zm')): ?>
             <li><a href="<?php echo home_url(); ?>?m=stock&a=list&t=zm" title="照明系列"><span class="iconb" data-icon=""></span><span>照明系列</span></a></li>
+            <?php endif; ?>
+            <?php if(User_Model::has_auth('stock_list_zs')): ?>
             <li><a href="<?php echo home_url(); ?>?m=stock&a=list&t=zs" title="指示系列"><span class="iconb" data-icon=""></span><span>指示系列</span></a></li>
+            <?php endif; ?>
+            <?php if(User_Model::has_auth('stock_list_xs')): ?>
             <li><a href="<?php echo home_url(); ?>?m=stock&a=list&t=xs" title="显示系列"><span class="iconb" data-icon=""></span><span>显示系列</span></a></li>
+            <?php endif; ?>
+            <?php if(User_Model::has_auth('stock_list_bg')): ?>
             <li><a href="<?php echo home_url(); ?>?m=stock&a=list&t=bg" title="背光系列"><span class="iconb" data-icon=""></span><span>背光系列</span></a></li>
+            <?php endif; ?>
         </ul>
         
         <div class="divider"><span></span></div>

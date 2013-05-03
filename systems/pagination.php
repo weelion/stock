@@ -352,7 +352,7 @@ class Pagination
         $now = $this->_properties['page']*$this->_properties['records_per_page'];
         //$output = '';
         $output = '<div class="dataTables_info" id="order_list_table_info" style="clear: none;">目前显示：'
-                .($this->_properties['page']>1?(($this->_properties['page']-1)*$this->_properties['records_per_page']):1).' - '.($now>$this->_properties['records']?$this->_properties['records']:$now).' 条, 共'.$this->_properties['total_pages'].' 页</div>';
+                .($this->_properties['page']>1?(($this->_properties['page']-1)*$this->_properties['records_per_page']):($this->_properties['records']?1:0)).' - '.($now>$this->_properties['records']?$this->_properties['records']:$now).' 条, 共'.$this->_properties['total_pages'].' 页</div>';
 
         // if there is a single page, or no pages at all, don't display anything
         if ($this->_properties['total_pages'] > 1){

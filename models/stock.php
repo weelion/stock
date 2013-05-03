@@ -71,8 +71,6 @@ class Stock_Model
 
         $sql = "update `" . self::table() . "` set `id` = `id` {$set} {$set_total} where `id` = " . $id;
 
-
-
         return DB::query($sql);
     }
 
@@ -108,28 +106,59 @@ class Stock_Model
     /**
      * 过滤
      */
-    public static function filter($fields, $filter, $page = 1, $pagesize = 10) {
+    public static function filter($fields, $filter, $page = 1, $pagesize = 10, $type='serach',$isorder=0) {
         $where = array();
-        self::_filter_maker($where, $filter);
+        self::_filter_maker($where, $filter, $type);
         $condition = (empty($where)?'':'where ' . implode(' and ', $where));
+        if('info_serach'==$type && empty($condition)) {
+            return array();
+        }
 
+        if('serach'==$type){
+            $condition = (empty($condition)?' where ':$condition.' and ').'`order`='.$isorder;
+        }
         $fields = '`' . implode('`, `', $fields).'`';
         $offset = (($page - 1) * $pagesize);
         $sql = 'select '. $fields .' from `' . self::table() . '` '. $condition . ' order by `id` desc ' .
                ' limit ' . $offset . ', ' . $pagesize;
-
         return DB::all($sql);
     }
 
     /**
      * 记录数
      */
-    public static function total($filter){
+    public static function total($filter, $type='serach',$isorder=0){
         $where = array();
-        self::_filter_maker($where, $filter);
+        self::_filter_maker($where, $filter, $type);
         $condition = (empty($where)?'':'where ' . implode(' and ', $where));
-
+        if('info_serach'==$type && empty($condition)) {
+            return 0;
+        }
+        if('serach'==$type){
+            $condition = (empty($condition)?' where ':$condition.' and ').'`order`='.$isorder;
+        }
         $sql = 'select count(`id`) AS rows from `' . self::table() . '` '.$condition;
+
+        return DB::only($sql);
+    }
+
+
+    /**
+     * 库存总量
+     */
+    public static function sum_total($filter, $type='serach',$isorder=0){
+        $where = array();
+        self::_filter_maker($where, $filter, $type);
+        $condition = (empty($where)?'':'where ' . implode(' and ', $where));
+        if('info_serach'==$type && empty($condition)) {
+            return 0;
+        }
+        if('serach'==$type){
+            $condition = (empty($condition)?' where ':$condition.' and ').'`order`='.$isorder;
+        }else{
+           $condition = $condition.' and `order`='.$isorder;
+        }
+        $sql = 'select sum(`total`) AS total from `' . self::table() . '` '.$condition;
 
         return DB::only($sql);
     }
@@ -138,20 +167,43 @@ class Stock_Model
     /**
      * filter maker
      */
-    private static function _filter_maker(&$where, $filter) {
-        foreach ($filter as $key=>$value) {
-            if(!empty($value)){
-                if(in_array($key,array('code','pno','model'))) {
-                    $where[$key]='`'.$key.'` like \''.$value.'%\'';
+    private static function _filter_maker(&$where, $filter, $type='serach') {
+        $serach = $filter[$type];
+        foreach ($serach as $key=>$value) {
+            if($value){
+                if(get($key)){
+                    $where[$key] = '`'.$key.'` like \''.self::_filter_like(get($key), $value).'\'';
                 }
-                if(in_array($key,array('min_bright','min_ctemp','min_voltage'))) {
-                    $where[$key]='`'.$key.'` >= \''.intval($value).'\'';
-                }
-                if (in_array($key, array('max_bright','max_ctemp','max_voltage'))) {
-                    $where[$key]='`'.$key.'` <= \''.intval($value).'%\'';
+            }else{
+                if(in_array($key,$filter['range'])){
+                    if(get('min_'.$key)) {
+                        $where['min_'.$key]='`min_'.$key.'` >= \''.get('min_'.$key).'\'';
+                    }
+                    if(get('max_'.$key)) {
+                        $where['max_'.$key]='`max_'.$key.'` <= \''.get('max_'.$key).'\'';
+                    }
+                }else{
+                    if(get($key)) {
+                        $where[$key] = '`'.$key.'` = \''.get($key).'\'';
+                    }
                 }
             }
         }
+    }
+
+    private static function _filter_like($value, $like) {
+        switch ($like) {
+            case LIKE:
+                $value = '%'.$value.'%';
+            break;
+            case LEFT_LIKE:
+                $value = '%'.$value;
+            break;
+            case RIGHT_LIKE:
+                $value = $value.'%';
+            break;
+        }
+        return $value;
     }
 }
  ?>

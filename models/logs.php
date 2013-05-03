@@ -14,7 +14,7 @@ class Logs_Model
     public static function filter($filter, $page, $pagesize) {
 
         $sql = "select `l`.`loged_at`, `l`.`type`, `u`.`username`, `l`.`data`, 
-                `l`.`extra` from `logs` l left join `users` u on `u`.`id` = `l`.`uid` ";
+                `l`.`extra`,`l`.`colour` from `logs` l left join `users` u on `u`.`id` = `l`.`uid` ";
 
         if($filter) {
             $sql .= ' where 1=1 ';
@@ -39,7 +39,7 @@ class Logs_Model
      */
     public static function total($filter = array()) {
 
-        $sql = "select count(id) as count from `logs`";
+        $sql = "select count(logs.id) as count from `logs` left join `users`  on `users`.`id` = `logs`.`uid`";
         if($filter) {
 
             $sql .= ' where 1=1 ';

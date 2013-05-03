@@ -481,3 +481,9 @@ button.ui-button::-moz-focus-inner { border: 0; padding: 0; } /* reset extra pad
 .pbar { overflow: hidden; }
 .percent { float: right; }
 .elapsed { float: left;}
+
+.formRow [class*="grid"] > label {
+    display: block;
+    float: left;
+    padding-top: 1px;
+}

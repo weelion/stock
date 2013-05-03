@@ -21,8 +21,6 @@ class User_Model
      */
     public static function doLogin($username, $password, $remember) {
 
-        //echo $sql = "insert into users (`username`, `password`, `role`, `salt`) value ('$username', '$mp', 0, '$salt')";
-
         $flat = false;
 
         $sql = "select id, username,password, salt, role from users where username = '{$username}'";
@@ -83,7 +81,19 @@ class User_Model
      * 检查登录状态
      */
     public static function checkLogin() {
-        return true;
+        $cookie = self::exCookie();
+
+        $flat = false;
+        if(!empty($cookie)) {
+
+            $uid    = $cookie['uid'] ? $cookie['uid'] : 0;
+            $token  = $cookie['token'] ? $cookie['token'] : '';
+            if(self::checkToken($uid, $token)) {
+                $flat = true;
+            }
+        }
+
+        return $flat;
     }
 
     /**
@@ -96,23 +106,17 @@ class User_Model
             $uid    = $cookie['uid'] ? $cookie['uid'] : 0;
             $token  = $cookie['token'] ? $cookie['token'] : '';
 
-            $logs = array(
-                        'type'     => 'user',
-                        'uid'      => $uid,
-                        'data'     => '登录',
-                        'loged_at' => NOW
-                    );
 
             $flat = false;
             if(self::checkToken($uid, $token)) {
-                $logs['extra'] = '成功';
+                $extra = '成功';
                 $flat = true;
             } else {
-                $logs['extra'] = '失败'; 
+                $extra = '失败'; 
                 setcookie('kc_token', '', -1);
             }
 
-            logs($logs);
+            // logs('user', '登录', $extra);
 
             if($flat) header("location:".home_url() . '?m=user&a=center');
 
@@ -185,8 +189,9 @@ class User_Model
      * 会员搜索
      */
     public static function filter($filter, $page, $pagesize) {
-        $sql = 'select *,u.id as uid from `users` u left join `role` r on u.role=r.id';
+        $offset = ($page -1) * $pagesize;
 
+        $sql = 'select *,u.id from `users` u left join `role` r on u.role=r.id';
         if($filter) {
             $sql .= ' where 1=1 ';
             foreach($filter as $field => $value) {
@@ -198,9 +203,9 @@ class User_Model
             }
         }
 
-        $offset = ($page -1) * $pagesize;
-
+        $sql .= ' order by u.id desc';
         $sql .= ' limit ' . $offset . ', '. $pagesize;
+
         return DB::all($sql);
     }
 
@@ -220,30 +225,57 @@ class User_Model
         if(empty($password)) {
             return array('status'=>false,'msg'=>'密码不能为空');
         }
-        $sql = 'select `id` from `users` where `username`=\''.$username.'\'';
-        $uid = DB::only($sql);
-        if(!empty($uid)){
+
+        if(self::check($username)){
             return array('status'=>false,'msg'=>'用户名已经存在');
         }
         $salt = rand_str();
         $password = md5($salt .$password . md5($salt));
         $sql = 'insert into users (`username`,`password`,`role`,`salt`) values (\''.$username.'\',\''.$password.'\',\''.$role.'\',\''.$salt.'\')';
         $cookie = self::exCookie();
-        $logs = array(
-                      'type'     => 'user',
-                      'uid'      => $cookie['uid'],
-                      'data'     => '新增会员',
-                      'loged_at' => NOW
-                    );
+
         if(DB::query($sql)) {
             $result = array('status'=>true,'msg'=>'新增会员成功');
-            $logs['extra'] = '成功';
+            $extra = '成功';
         }else{
             $result = array('status'=>false,'msg'=>'操作失败');
-            $logs['extra'] = '失败';
+            $extra = '失败';
         }
-        logs($logs);
+        logs('user', '新增会员[' . $username . ']', $extra);
         return $result;
+    }
+
+    /**
+     * 检查用户名
+     */
+    public static function check($username, $uid = 0) {
+        $sql = 'select `id` from `users` where `username`=\''.$username.'\'';
+        $id = DB::only($sql);
+
+        if(!empty($uid))
+            $return = (empty($id) || $id == $uid) ? false : true;
+        else 
+            $return = empty($id) ? false : true;
+
+        return $return;
+    }
+
+    /**
+     * 编辑会员
+     *
+     * @return boolean
+     */
+    public static function update($id, $data) {
+        if(empty($id) || empty($data)) return false;
+
+        $set = '';
+        foreach ($data as $key => $value) {
+            $set .= ", `{$key}`='{$value}'";
+        }
+
+        $sql = "update `users` set `id` = `id` {$set} where `id` = '{$id}'";
+
+        return DB::query($sql);
     }
 
     /**
@@ -253,26 +285,25 @@ class User_Model
      *
      * @return array
      */
-    static function doDel($uid) {
-        $sql = 'DELETE FROM `users` WHERE `id`='.$uid;
-        $cookie = self::exCookie();
-        $logs = array(
-                      'type'     => 'user',
-                      'uid'      => $cookie['uid'],
-                      'data'     => '删除会员',
-                      'loged_at' => NOW
-                    );
+    static function delete($id) {
+        $sql = "DELETE FROM `users` WHERE `id`='{$id}'";
+
         if(DB::query($sql)) {
-            $result = array('status'=>true,'msg'=>'删除会员成功');
-            $logs['extra'] = '成功';
+            $result = array('status'=>true,'msg'=>"删除会员成功");
+            $extra = '成功';
         }else{
-            $result = array('status'=>false,'msg'=>'操作失败');
-            $logs['extra'] = '失败';
+            $result = array('status'=>false, 'msg'=>'操作失败');
+            $extra = '失败';
         }
-        logs($logs);
+
+        logs('user', "删除会员ID为{$id}", $extra);
+
         return $result;        
     }
 
+    /**
+     * 修改密码
+     */
     static function changepwd($oldpwd,$pwd) {
         if(empty($oldpwd)) {
             return array('status'=>false,'msg'=>'请输入原始密码');
@@ -290,35 +321,70 @@ class User_Model
         }
         $salt = rand_str();
         $pwd = md5($salt . $pwd . md5($salt));
-        $sql = 'UPDATE `users` SET `password`=\''.$password.'\',`salt`=\''.$salt.'\' WHERE `id`='.$cookie['uid'];
-        $logs = array(
-                      'type'     => 'user',
-                      'uid'      => $cookie['uid'],
-                      'data'     => '更改密码',
-                      'loged_at' => NOW
-                    );
+        $sql = 'UPDATE `users` SET `password`=\''.$pwd.'\',`salt`=\''.$salt.'\' WHERE `id`='.$cookie['uid'];
+
         if(DB::query($sql)) {
             $result = array('status'=>true,'msg'=>'密码更改成功');
-            $logs['extra'] = '成功';
+            $extra = '成功';
         }else{
             $result = array('status'=>false,'msg'=>'操作失败');
-            $logs['extra'] = '失败';
+            $extra = '失败';
         }
-        logs($logs);
-        return $result;                    
+        logs('user', '更改密码', $extra);
+        return $result;
     }
 
     /**
      * 会员信息
      *
+     * @param $id     array id
      * @param $field  array 字段
-     * @param $filter array 过滤条件
      *
      * @return array
      */
-    static function info($field, $filter)
-    {
-        $field = empty($field)?'*':('`'.implode('`,`'.$field).'`');
+    static function info($id, $field = array()) {
 
+        $field = empty($field)? '*' : '`' . implode('`, `', $field) . '`';
+
+        $sql = "select {$field} from `users` where `id` = '{$id}'";
+
+        return DB::one($sql);
+    }
+
+    /**
+     * 认证权限
+     */
+    public static function has_auth($auth = '') {
+        $flat = true;
+        if(empty($auth)) {
+            $m = get('m');
+            $a = get('a');
+            $t = get('t');
+
+            if(empty($m) || empty($a))
+                return false;
+
+            $auth = $m . '_' . $a;
+            if(get('t')) {
+                $auth .= '_' . $t;
+            }
+
+            $auth = strtolower($auth);
+        }
+
+        // 检查权限
+        $all_auths = all_auths();
+
+        if(in_array($auth, all_auths())) {
+            $user = self::info($_SESSION['s_uid']);
+            $my_auths = unserialize($user['auths']);
+
+
+            if(!$my_auths || !in_array($auth, $my_auths)) {
+                $flat = false;
+            }
+        }
+
+        return $flat;
     }
 }
